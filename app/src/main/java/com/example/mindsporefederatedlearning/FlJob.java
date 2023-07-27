@@ -6,6 +6,7 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 import com.mindspore.flclient.BindMode;
+import com.mindspore.flclient.FLClientStatus;
 import com.mindspore.flclient.FLParameter;
 import com.mindspore.flclient.SyncFLJob;
 import com.mindspore.flclient.model.RunType;
@@ -26,7 +27,7 @@ public class FlJob {
     // Android的联邦学习训练任务
     @SuppressLint("NewApi")
     @RequiresApi(api = Build.VERSION_CODES.M)
-    public void syncJobTrain() {
+    public FLClientStatus syncJobTrain() {
         // 构造dataMap
         String trainTxtPath = this.parentPath + "/data/1.txt";
         String evalTxtPath = this.parentPath + "/data/eval.txt";      // 非必须，getModel之后不进行验证可不设置
@@ -51,10 +52,10 @@ public class FlJob {
         String deployEnv = "android";
 
         // 端云通信url，请保证Android能够访问到server，否则会出现connection failed
-//        String domainName = "http://192.168.199.162:9020";
-//        boolean ifUseElb = true;
-        String domainName = "http://test-kolun-fl.transsion-os.com";
-        boolean ifUseElb = false;
+        String domainName = "http://192.168.199.162:9021";
+        boolean ifUseElb = true;
+//        String domainName = "http://test-kolun-fl.transsion-os.com";
+//        boolean ifUseElb = false;
         int serverNum = 1;
         int threadNum = 1;
         BindMode cpuBindMode = BindMode.NOT_BINDING_CORE;
@@ -73,6 +74,8 @@ public class FlJob {
         flParameter.setThreadNum(threadNum);
         flParameter.setCpuBindMode(cpuBindMode);
         flParameter.setBatchSize(batchSize);
+        flParameter.setSleepTime(100);
+
 //        List<String> list = new ArrayList<>();
 //        list.add(trainTxtPath);
 //        List<String> list2 = new ArrayList<>();
@@ -81,7 +84,7 @@ public class FlJob {
 //        flParameter.setHybridWeightName(list2, RunType.INFERMODE);
         // start FLJob
         train_job = new SyncFLJob();
-        train_job.flJobRun();
+        return train_job.flJobRun();
     }
     // Android的联邦学习推理任务
     public void syncJobPredict() {

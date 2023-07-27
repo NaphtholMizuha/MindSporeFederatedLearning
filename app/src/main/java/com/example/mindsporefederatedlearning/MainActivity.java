@@ -1,5 +1,6 @@
 package com.example.mindsporefederatedlearning;
 
+import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mindsporefederatedlearning.utils.LoggerUtil;
+import com.mindspore.flclient.FLClientStatus;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,8 +77,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.start_federated_learning:
                 new Thread(() -> {
                     flJob = new FlJob(parentPath);
-                    flJob.syncJobTrain();
+                    FLClientStatus result = flJob.syncJobTrain();
                     flJob.syncJobPredict();
+                    flJob.finish_job();
+                    if (result==FLClientStatus.FAILED){
+                        Log.d("FLClientStatus", "FAILED");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+                                        //标题
+                                        .setTitle("提示")
+                                        //内容
+                                        .setMessage("训练失败，请再次点击按钮。")
+                                        //图标
+                                        .setIcon(R.mipmap.ic_launcher)
+                                        .setPositiveButton("确认", null)
+                                        .create();
+                                alertDialog.show();
+                            }
+                        });
+                    }else if (result==FLClientStatus.WAIT){
+                        Log.d("FLClientStatus", "WAIT");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+                                        //标题
+                                        .setTitle("提示")
+                                        //内容
+                                        .setMessage("在等待序列中，请等待一段时间后重新点击按钮。")
+                                        //图标
+                                        .setIcon(R.mipmap.ic_launcher)
+                                        .setPositiveButton("确认", null)
+                                        .create();
+                                alertDialog.show();
+                            }
+                        });
+                    }else {
+                        Log.d("FLClientStatus", "Else Status");
+                    }
                 }).start();
                 break;
             case R.id.bt_show_log_info:
@@ -91,4 +131,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
         flJob.finish_job();
     }
+
 }
