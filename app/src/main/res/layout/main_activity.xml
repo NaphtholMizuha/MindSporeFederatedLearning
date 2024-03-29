@@ -30,4 +30,11 @@
         android:layout_marginTop="10dp"
         android:id="@+id/bt_show_log_info"/>
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="加载模型"
+        android:layout_marginTop="10dp"
+        android:id="@+id/bt_load_model"/>
+
 </LinearLayout>

@@ -1,6 +1,7 @@
 package com.example.mindsporefederatedlearning;
 
 import android.annotation.SuppressLint;
+import android.net.SSLCertificateSocketFactory;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
@@ -11,12 +12,21 @@ import com.mindspore.flclient.FLParameter;
 import com.mindspore.flclient.SyncFLJob;
 import com.mindspore.flclient.model.RunType;
 
+import java.net.Socket;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
+
 public class FlJob {
     private static final Logger LOGGER = Logger.getLogger(FlJob.class.toString());
     private String parentPath;
@@ -46,15 +56,16 @@ public class FlJob {
         dataMap.put(RunType.EVALMODE, evalPath);      // 非必须，getModel之后不进行验证可不设置
 
         String flName = "com.example.mindsporefederatedlearning.albert.AlbertClient";                             // AlBertClient.java 包路径
-        String trainModelPath = "/model/albert_inference.mindir.ms";                      // 绝对路径
-        String inferModelPath = "/model/albert_inference.mindir.ms";                      // 绝对路径, 和trainModelPath保持一致
+//        String trainModelPath = "/model/albert_inference.mindir.ms";                      // 绝对路径
+        String trainModelPath = "/model/albert_supervise.mindir.ms";
+        String inferModelPath = "/model/albert_supervise.mindir.ms";                      // 绝对路径, 和trainModelPath保持一致
         String sslProtocol = "TLSv1.2";
         String deployEnv = "android";
 
         // 端云通信url，请保证Android能够访问到server，否则会出现connection failed
-        String domainName = "http://192.168.199.162:9021";
+        String domainName = "http://192.168.199.162:9022";
         boolean ifUseElb = true;
-//        String domainName = "http://test-kolun-fl.transsion-os.com";
+//        String domainName = "https://test-kolun-fl.transsion-os.com";
 //        boolean ifUseElb = false;
         int serverNum = 1;
         int threadNum = 1;
@@ -74,7 +85,8 @@ public class FlJob {
         flParameter.setThreadNum(threadNum);
         flParameter.setCpuBindMode(cpuBindMode);
         flParameter.setBatchSize(batchSize);
-        flParameter.setSleepTime(100);
+        flParameter.setSleepTime(5000);
+
 
 //        List<String> list = new ArrayList<>();
 //        list.add(trainTxtPath);
@@ -83,6 +95,46 @@ public class FlJob {
 //        flParameter.setHybridWeightName(list, RunType.TRAINMODE);
 //        flParameter.setHybridWeightName(list2, RunType.INFERMODE);
         // start FLJob
+        SSLSocketFactory sslSocketFactory = new SSLCertificateSocketFactory(10000);
+        flParameter.setSslSocketFactory(sslSocketFactory);
+        X509TrustManager x509TrustManager = new X509ExtendedTrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        };
+        flParameter.setX509TrustManager(x509TrustManager);
+
         train_job = new SyncFLJob();
         return train_job.flJobRun();
     }
@@ -118,6 +170,9 @@ public class FlJob {
         List<Object> labels = syncFLJob.modelInfer();
         LOGGER.info("labels = " + Arrays.toString(labels.toArray()));
     }
+
+
+
 
     public void finish_job(){
         train_job.stopFLJob();
